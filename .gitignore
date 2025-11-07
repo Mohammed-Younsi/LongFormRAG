@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+.ipynb_checkpoints/
+
+# Virtual env
+Ragenv/
+
+# App/runtime artifacts
+*.log
+.DS_Store
+
+# Data & indices (keep repo lightweight)
+data/raw/
+data/*.index
+data/*.json
+data/*.jsonl
+data/*.pkl
+data/*.pickle
+data/*.npy
+data/*.pt
+data/*.bin
+
+# Streamlit cache
+.streamlit/
+
+
