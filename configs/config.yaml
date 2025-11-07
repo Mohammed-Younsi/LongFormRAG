@@ -1,0 +1,11 @@
+# Basic config template
+embedding_model: sentence-transformers/all-MiniLM-L6-v2
+chunk:
+  window_tokens: 800
+  overlap_tokens: 0.15   # proportion (15%)
+  sentence_aware: true
+hybrid:
+  alpha: 0.6
+  topk_dense: 50
+  topk_sparse: 50
+  topk_final: 5
