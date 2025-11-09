@@ -18,3 +18,8 @@ streamlit>=1.33.0
 tqdm>=4.66.0
 pydantic>=2.5.0
 pyyaml>=6.0.1
+
+
+transformers>=4.43
+accelerate
+einops
