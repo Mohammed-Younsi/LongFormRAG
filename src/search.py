@@ -61,10 +61,31 @@ def main():
     di, ds = dense_search(args.query, model, index, args.topk_dense)
     si, ss = bm25_search(args.query, bm25, args.topk_sparse)
 
-    merged = hybrid_merge(di, ds, si, ss, alpha=args.alpha, n_final=args.topk_final)
+    """ merged = hybrid_merge(di, ds, si, ss, alpha=args.alpha, n_final=args.topk_final)
+    
+    from src.rerank import load_reranker, rerank as ce_rerank
+    
+    cand_idx = [int(i) for i,_ in merged]
+    cand_passages = [chunks[i]["text"] for i in cand_idx]
+    reranker = load_reranker()
+    reranked = ce_rerank(args.query, merged, cand_passages, reranker, topk_final=args.topk_final)
+    # print reranked instead of merged """
+        
+    from src.rerank import load_reranker, rerank as ce_rerank
+    # AFTER: give re-ranker more to work with
+    merged = hybrid_merge(di, ds, si, ss, alpha=args.alpha, n_final=max(args.topk_final, 50))
+
+    # Build passages aligned to 'merged' order
+    cand_idx = [int(i) for i, _ in merged]
+    cand_passages = [chunks[i]["text"] for i in cand_idx]
+
+    # Re-rank
+    reranker = load_reranker("cross-encoder/ms-marco-MiniLM-L-6-v2")
+    reranked = ce_rerank(args.query, merged, cand_passages, reranker, topk_final=args.topk_final)
+
 
     print("\n=== Top Passages ===")
-    for rank, (idx, score) in enumerate(merged, 1):
+    for rank, (idx, score) in enumerate(reranked, 1):
         rec = chunks[int(idx)]
         preview = rec["text"][:240].replace("\n"," ")
         print(f"[{rank}] score={score:.3f} | {rec['doc_id']} p.{rec['page']}")

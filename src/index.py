@@ -19,11 +19,15 @@ def build_dense(chunks, model_name):
     return emb
 
 def save_faiss(emb, index_path):
+    import faiss, numpy as np
+    # Ensure correct dtype/layout for FAISS
+    emb = np.ascontiguousarray(emb.astype('float32'))
     dim = emb.shape[1]
-    index = faiss.IndexHNSWFlat(dim, 32)
-    index.hnsw.efConstruction = 200
-    index.add(emb.astype(np.float32))
+    # Exact inner-product index (cosine, since we normalized)
+    index = faiss.IndexFlatIP(dim)
+    index.add(emb)
     faiss.write_index(index, index_path)
+
 
 def build_bm25(chunks):
     # simple word tokenization
