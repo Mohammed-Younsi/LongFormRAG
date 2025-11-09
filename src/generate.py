@@ -11,6 +11,23 @@ from src.pack import pack
 from src.citations import coverage, tags_exist_in_packed, should_abstain
 from src.llm_ollama import generate_json_ollama_chat
 
+def _append_run(path, query, answer, citations, confidence, coverage, used_tags):
+    if not path:
+        return
+    import json, time, os
+    folder = os.path.dirname(path)
+    if folder:
+        os.makedirs(folder, exist_ok=True)
+    with open(path, "a") as f:
+        f.write(json.dumps({
+            "ts": time.time(),
+            "query": query,
+            "answer": answer,
+            "citations": citations,
+            "confidence": confidence,
+            "coverage": coverage,
+            "used_tags": used_tags,
+        }) + "\n")
 
 def main():
     ap = argparse.ArgumentParser()
@@ -32,6 +49,8 @@ def main():
     ap.add_argument("--model_name", default="gemma3:4b", help="Ollama model name (see `ollama list`)")
     ap.add_argument("--temperature", type=float, default=0.2)
     ap.add_argument("--max_new_tokens", type=int, default=220)
+    ap.add_argument("--save", default=None, help="Append results to this JSONL file")
+
 
     args = ap.parse_args()
 
@@ -70,9 +89,21 @@ def main():
 
     # --- abstain on weak evidence ---
     if should_abstain(rerank_scores, args.abstain_threshold):
-        print("\n=== ANSWER ===\nNot enough evidence in the corpus.")
-        print("\nCITATIONS: []\nCONFIDENCE: 0.2")
+        answer = "Not enough evidence in the corpus."
+        cited = []
+        conf = 0.2
+        cov = 0.0
+        used = [f"{chunks[i]['doc_id']}:{chunks[i]['page']}" for i in top_idx]
+
+        print("\n=== ANSWER ===\n" + answer)
+        print("\nCITATIONS:", cited)
+        print("CONFIDENCE:", round(conf, 3))
+        print("COVERAGE:", round(cov, 2))
+        print("USED_TAGS:", used)
+
+        _append_run(args.save, args.query, answer, cited, conf, cov, used)
         return
+
 
     # --- pack context ---
     prompt, used = pack(args.query, chunks, top_idx, max_chars=args.max_ctx_chars)
@@ -120,6 +151,9 @@ def main():
     print("CONFIDENCE:", round(conf, 3))
     print("COVERAGE:", round(cov, 2))
     print("USED_TAGS:", used)
+    
+    _append_run(args.save, args.query, answer, cited, conf, cov, used)
+
 
 
 
